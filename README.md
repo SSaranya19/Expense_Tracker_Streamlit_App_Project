@@ -11,3 +11,5 @@ The tracker categorizes expenses into Food, groceries, shopping, and personal sp
 You can access the live version of the app here:
     
 [Expense Tracker Streamlit App] (https://expense-tracker-app-project.streamlit.app/)
+
+![image](https://github.com/user-attachments/assets/924fda54-f2c0-424d-adfe-ca930de09be6)
