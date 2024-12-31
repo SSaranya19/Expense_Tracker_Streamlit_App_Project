@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
-import pymysql
-from sqlalchemy import create_engine
-from urllib.parse import quote_plus
+import sqlite3
 from datetime import datetime, date
 import plotly.express as px
 
@@ -13,11 +11,7 @@ st.set_page_config(page_title="Expense Tracker",
                    initial_sidebar_state="expanded")
 
 # Connecting to MySQL database
-password = quote_plus(st.secrets["credentials"]["DB_PASSWORD"])
-db_host = st.secrets["credentials"]["DB_HOST"]
-db_name = st.secrets["credentials"]["DB_NAME"]
-db_user = st.secrets["credentials"]["DB_USER"]
-engine = create_engine(f"mysql+pymysql://{db_user}:{password}@{db_host}/{db_name}")
+conn = sqlite3.connect(r"C:\Users\DELL\Desktop\Project\Project1\expense_db.db")
 
 # Streamlit App Title
 st.title("Analyzing Personal Expenses")
@@ -32,8 +26,7 @@ selected_date = st.sidebar.date_input("Select a Date:", value=default_start_date
 # Fetching entire data from MySQL database
 def fetch_data(selected_date):
     query = f"SELECT DISTINCT Date, Category, Payment_mode, Description, Amount, Cashback FROM expenses WHERE Date = '{selected_date}';"
-    with engine.connect() as connection:
-        df = pd.read_sql(query, connection)
+    df = pd.read_sql(query, conn)
     return df
 
 # Displaying selected data for date
@@ -92,12 +85,12 @@ queries = {
     """,
     "Monthly Expenses": """
         SELECT
-	        DATE_FORMAT(Date, '%%Y-%%m') AS Month,
+	        strftime('%Y-%m', Date) AS Month,
             SUM(Amount) AS Total_spent
         FROM
 	        Expenses
         GROUP BY
-	        DATE_FORMAT(Date, '%%Y-%%m')
+	        strftime('%Y-%m', Date)
         ORDER BY
 	        Month;
     """,
@@ -115,12 +108,12 @@ queries = {
     "January month Expenses": """
         SELECT * FROM Expenses
         WHERE
-	        DATE_FORMAT(Date, '%%Y-%%m') = '2024-01'
+	        strftime('%Y-%m', Date) = '2024-01'
         LIMIT 200;
     """,
     "Total cashback receive per month": """
         SELECT
-	        DATE_FORMAT(Date, '%%Y-%%m') AS Month,
+	        strftime('%Y-%m', Date) AS Month,
             SUM(Cashback) AS Total_cashback
         FROM
 	        Expenses
@@ -206,10 +199,6 @@ queries = {
         ORDER BY
 	        Total_spent_after_cashback DESC;
     """,
-    "Transactions with no cashback": """
-        SELECT * FROM Expenses
-        WHERE Cashback = 0;
-    """,
     "Total cashback receive for each category": """
         SELECT
         	Category,
@@ -223,7 +212,7 @@ queries = {
     """,
     "Month-Wise Count of Transactions for Each Category": """
         SELECT 
-            DATE_FORMAT(Date, '%%Y-%%m') AS Month,
+            strftime('%Y-%m', Date) AS Month,
             Category,
             COUNT(*) AS Transaction_count
         FROM
@@ -247,7 +236,7 @@ queries = {
     """,
     "Category wise highest spending in each month": """
         SELECT 
-            DATE_FORMAT(Date, '%%Y-%%m') AS Month,
+            strftime('%Y-%m', Date) AS Month,
             Category,
             SUM(Amount) AS Total_spent
         FROM
@@ -286,14 +275,14 @@ selected_charts = st.sidebar.multiselect("Select a query to display the correspo
 # Displaying Query Results
 if selected_query != "Select a query":
     query = queries[selected_query]
-    df_query = pd.read_sql(query, engine)
+    df_query = pd.read_sql(query, conn)
     st.subheader(f"{selected_query}")
     st.dataframe(df_query)
 
 # Displaying Charts
 if "Total, Avg, Min, Max Spending by Category" in selected_charts:
     query = queries["Total, Avg, Min, Max Spending by Category"]
-    df = pd.read_sql(query, engine)
+    df = pd.read_sql(query, conn)
     st.subheader("Spending by Category")
     fig = px.bar(df, x='Category', y=['Total_spent', 'Avg_spent', 'Max_spent', 'Min_spent'],          
              labels={'value': 'Amount', 'variable': 'Metric'}, 
@@ -302,7 +291,7 @@ if "Total, Avg, Min, Max Spending by Category" in selected_charts:
 
 if "Transactions Count by Category" in selected_charts:
     query = queries["Transactions Count by Category"]
-    df = pd.read_sql(query, engine)
+    df = pd.read_sql(query, conn)
     st.subheader("Transactions Count by Category")
     fig = px.pie(df, 
              names='Category', 
@@ -312,21 +301,21 @@ if "Transactions Count by Category" in selected_charts:
 
 if "Monthly Expenses" in selected_charts:
     query = queries["Monthly Expenses"]
-    df = pd.read_sql(query, engine)
+    df = pd.read_sql(query, conn)
     st.subheader("Monthly Expenses")
     line_chart = px.line(df, x='Month', y='Total_spent', markers=True)
     st.plotly_chart(line_chart)
 
 if "Daily Expenses" in selected_charts:
     query = queries["Daily Expenses"]
-    df = pd.read_sql(query, engine)
+    df = pd.read_sql(query, conn)
     st.subheader("Daily Expenses")
     bar_chart = px.bar(df, x='Day', y='Total_expenses')
     st.plotly_chart(bar_chart)
 
 if "Total cashback receive per month" in selected_charts:
     query = queries["Total cashback receive per month"]
-    df = pd.read_sql(query, engine)
+    df = pd.read_sql(query, conn)
     st.subheader("Total cashback receive per month")
     fig = px.bar(df, x='Month', y='Total_cashback', 
              labels={'Total_cashback': 'Total Cashback', 'Month': 'Month'})
@@ -334,7 +323,7 @@ if "Total cashback receive per month" in selected_charts:
 
 if "Total cashback receive per day" in selected_charts:
     query = queries["Total cashback receive per day"]
-    df = pd.read_sql(query, engine)
+    df = pd.read_sql(query, conn)
     st.subheader("Total cashback receive per day")
     fig = px.area(df, x='Date', y='Total_cashback', 
              labels={'Total_cashback': 'Total Cashback', 'Date': 'Date'})
@@ -342,7 +331,7 @@ if "Total cashback receive per day" in selected_charts:
 
 if "Total, Avg, Min, Max spending by payment mode" in selected_charts:
     query = queries["Total, Avg, Min, Max spending by payment mode"]
-    df = pd.read_sql(query, engine)
+    df = pd.read_sql(query, conn)
     st.subheader("Spending by payment mode")
     fig = px.bar(df, x='Payment_Mode', y=['Total_spent', 'Avg_spent', 'Max_spent', 'Min_spent'],          
              labels={'Total_spent': 'Total Spent', 'Avg_spent': 'Average Spending',
@@ -352,14 +341,14 @@ if "Total, Avg, Min, Max spending by payment mode" in selected_charts:
 
 if "Total spending after cashback for Each Category" in selected_charts:
     query = queries["Total spending after cashback for Each Category"]
-    df = pd.read_sql(query, engine)
+    df = pd.read_sql(query, conn)
     st.subheader("Total spending after cashback for Each Category")
     fig = px.pie(df, names='Category', values='Total_spent_after_cashback')
     st.plotly_chart(fig)
 
 if "Total cashback receive for each category" in selected_charts:
     query = queries["Total cashback receive for each category"]
-    df = pd.read_sql(query, engine)
+    df = pd.read_sql(query, conn)
     st.subheader("Total cashback receive for each category")
     fig = px.bar(df, 
              x='Category', 
@@ -371,7 +360,7 @@ if "Total cashback receive for each category" in selected_charts:
 
 if "Month-Wise Count of Transactions for Each Category" in selected_charts:
     query = queries["Month-Wise Count of Transactions for Each Category"]
-    df = pd.read_sql(query, engine)
+    df = pd.read_sql(query, conn)
     st.subheader("Month-Wise Count of Transactions for Each Category")
     fig = px.bar(df, 
               x='Month', 
@@ -383,7 +372,7 @@ if "Month-Wise Count of Transactions for Each Category" in selected_charts:
 
 if "Category wise highest spending in each month" in selected_charts:
     query = queries["Category wise highest spending in each month"]
-    df = pd.read_sql(query, engine)
+    df = pd.read_sql(query, conn)
     st.subheader("Category wise highest spending in each month")
     fig = px.bar(df, 
               x='Month', 
