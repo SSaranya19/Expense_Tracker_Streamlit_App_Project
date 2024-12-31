@@ -11,7 +11,7 @@ st.set_page_config(page_title="Expense Tracker",
                    initial_sidebar_state="expanded")
 
 # Connecting to MySQL database
-conn = sqlite3.connect(r"C:\Users\DELL\Desktop\Project\Project1\expense_db.db")
+conn = sqlite3.connect("expense_db.db")
 
 # Streamlit App Title
 st.title("Analyzing Personal Expenses")
