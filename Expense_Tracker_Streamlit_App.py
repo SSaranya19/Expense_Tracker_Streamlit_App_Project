@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import pymysql
 from sqlalchemy import create_engine
 from urllib.parse import quote_plus
 from datetime import datetime, date
