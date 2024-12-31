@@ -1,7 +1,5 @@
 import streamlit as st
 import pandas as pd
-import os
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from urllib.parse import quote_plus
 from datetime import datetime, date
@@ -14,9 +12,11 @@ st.set_page_config(page_title="Expense Tracker",
                    initial_sidebar_state="expanded")
 
 # Connecting to MySQL database
-load_dotenv()
-password = quote_plus(os.getenv("USER_PASSWORD"))
-engine = create_engine(f"mysql+pymysql://root:{password}@localhost/expense_db")
+password = quote_plus(st.secrets["credentials"]["DB_PASSWORD"])
+db_host = st.secrets["credentials"]["DB_HOST"]
+db_name = st.secrets["credentials"]["DB_NAME"]
+db_user = st.secrets["credentials"]["DB_USER"]
+engine = create_engine(f"mysql+pymysql://{db_user}:{password}@{db_host}/{db_name}")
 
 # Streamlit App Title
 st.title("Analyzing Personal Expenses")
