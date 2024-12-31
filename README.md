@@ -7,3 +7,7 @@ This project aims to simulate an individual expense tracker using the Faker libr
 4. Developing a Streamlit app for visualizing analyses.
 
 The tracker categorizes expenses into Food, groceries, shopping, and personal spending, offering a detailed overview of financial habits over a year.
+
+You can access the live version of the app here:
+    
+[Expense Tracker Streamlit App] (https://expense-tracker-app-project.streamlit.app/)
